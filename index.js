@@ -140,9 +140,23 @@ const main = () => {
               ],
               transition: {
                 fn: fade
+              },
+              flip: {
+                duration: 200,
+                easing: 'ease-out'
               }
             })
           ];
+        }),
+        $('.list-buttons', {
+          $: [
+            $('button', {
+              $: [ $t('Shuffle') ],
+              on: {
+                click: ev => state.menu.reverse()
+              }
+            })
+          ]
         }),
         child({ count: _ => state.count }),
         child({ count: _ => state.count + 1 }),

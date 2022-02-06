@@ -64,7 +64,7 @@ function doTransition(node, options, direction, cb) {
   node.style.transitionDelay = `${options.delay}ms`;
   node.style.transitionDuration = `${options.duration}ms`;
   node.style.transitionTimingFunction = options.easing;
-  node.style.transitionProperty = Object.keys(anim).join(', ') + ', transform';
+  node.style.transitionProperty = Object.keys(anim).join(', ');
   node.scrollWidth;
   for(var key in anim) {
     node.style[key] = anim[key][1];
@@ -72,7 +72,23 @@ function doTransition(node, options, direction, cb) {
   node.ontransitionend = cb || noop; 
 }
 
-function Node(tagname, id, classes, attributes, events, children, transition) {
+function doFLIP(node, options, startRect, endRect, cb) {
+  const startX = startRect.x - endRect.x;
+  const startY = startRect.y - endRect.y;
+  
+  node.style.transition = 'none';
+  node.style.transform = `translate(${startX}px, ${startY}px)`;
+  node.scrollWidth;
+  node.style.transitionDelay = `${options.delay}ms`;
+  node.style.transitionDuration = `${options.duration}ms`;
+  node.style.transitionTimingFunction = options.easing;
+  node.style.transitionProperty = 'transform';
+  node.scrollWidth;
+  node.style.transform = 'translate(0,0)';
+  node.ontransitionend = cb || noop; 
+}
+
+function Node(tagname, id, classes, attributes, events, children, transition, flip) {
   let node;
 
   const options = {
@@ -95,6 +111,10 @@ function Node(tagname, id, classes, attributes, events, children, transition) {
     } else {
       cb();
     }
+  }
+
+  const FLIP = (startRect, endRect, cb = noop) => {
+    doFLIP(node, flip, startRect, endRect);
   }
 
   return {
@@ -173,9 +193,21 @@ function Node(tagname, id, classes, attributes, events, children, transition) {
       for(const child of children) {
         child.mount(node);
       }
+
+      let startRect, endRect, parentElement = node.parentElement;
+
+      if(flip && parentElement) {
+        startRect = node.getBoundingClientRect();
+      }
+
       anchor.parentElement.insertBefore(node, anchor);
 
-      intro();
+      if(flip && parentElement) {
+        endRect = node.getBoundingClientRect();
+        FLIP(startRect, endRect);
+      } else {
+        intro();
+      }
     },
     get() {
       return node;
@@ -199,7 +231,7 @@ export function $(selector, options = {}) {
       attributes.push({ key, value: options._[key] });
     }
   }
-  return Node(tagname, id, classes, attributes, options.on, options.$, options.transition);
+  return Node(tagname, id, classes, attributes, options.on, options.$, options.transition, options.flip);
 }
 
 export function $t(text) {
@@ -482,7 +514,6 @@ export function Zepton(options) {
 export function Render(options) {
   const template = options.template;
   const style = options.style;
-  const lifecycle = options.lifecycle;
   const state = options.state;
 
   const component = {
