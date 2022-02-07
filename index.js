@@ -100,7 +100,17 @@ const main = () => {
         $('div', {
           $: [ $t('Count : '), $t(_ => state.count)],
           _: {
-            class: _ => [`count-${state.count}`, 'something', { onlyAfter20: _ => state.count > 20}]
+            class: _ => [`count-${state.count}`, 'something', { onlyAfter20: _ => state.count > 20}],
+            style: {
+              background: 'black',
+              color: 'white'
+            }
+          }
+        }),
+        $('.test-div', {
+          $: [ $t('Test div') ],
+          _: {
+            style: _ => state.count % 2 === 0 ? { background: 'black', color: 'white' } : { background: 'white', color: 'black' } 
           }
         }),
         $if(_ => state.count < 10, _ => {

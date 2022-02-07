@@ -66,6 +66,32 @@ function compileClass(classes) {
   return result.trim();
 }
 
+function stylesHelper(style, node) {
+  let result = '';
+  if(isObject(style)) {
+    for(const key in style) {
+      if(node) {
+        node.style[key] = style[key];
+      }
+      result += `${key}: ${style[key]}; `;
+    }
+  } else if(isString(style)) {
+    if(node) {
+      node.setAttribute('style', style);
+    }
+    result += style;
+  }
+  return result.trim();
+}
+
+function compileStyles(styles, node) {
+  if(isFunction(styles)) {
+    return stylesHelper(styles(), node);
+  } else {
+    return stylesHelper(styles, node);
+  }
+}
+
 function doTransition(node, options, direction, cb) {
   const anim = options[direction];                                                                                                                      
   for(var key in anim) {
@@ -104,6 +130,7 @@ function Node(tagname, id, classes, attributes, events, children, transition, fl
   const options = {
     class: '',
     id: '',
+    styles: {},
     attributes: {}
   };
 
@@ -148,12 +175,16 @@ function Node(tagname, id, classes, attributes, events, children, transition, fl
         const { key, value } = attr;
         let result;
 
-        if(isFunction(attr)) {
-          result = options.attributes[key] = { result: attr(), value};
-        } else if(isString(attr)) {
-          result =  attr;
+        if(key === 'style' && !isString(value)) {
+          result = options.styles = { result: compileStyles(value, node), value};
+        } else {
+          if(isFunction(attr)) {
+            result = options.attributes[key] = { result: attr(), value};
+          } else if(isString(attr)) {
+            result = attr;
+          }
+          node.setAttribute(key, result);
         }
-        node.setAttribute(key, result);
       }
       for(const key in events) {
         node.addEventListener(key, events[key]);
@@ -185,6 +216,16 @@ function Node(tagname, id, classes, attributes, events, children, transition, fl
         const newResult = value();
         if(result !== newResult) {
           node.setAttribute(key, newResult);
+          options.attributes[key].result = newResult;
+        }
+      }
+      if(options.styles && isFunction(options.styles.value)) {
+        const { result, value } = options.styles;
+        const newResult = compileStyles(value);
+        console.log(newResult);
+        if(result !== newResult) {
+          compileStyles(value, node);
+          options.styles.result = newResult;
         }
       }
       for(const child of children) {
