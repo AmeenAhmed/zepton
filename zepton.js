@@ -42,14 +42,24 @@ function parseSelector (selector) {
   return { tagname, id, classes, attributes};
 }
 
+function classHelper(cls) {
+  if(isArray(cls)) {
+    return cls.map(item => classHelper(item)).join(' ');
+  } else if(isObject(cls)) {
+    return Object.keys(cls).map(key => (isFunction(cls[key]) ? cls[key]() : !!cls[key]) ? key : '');
+  } else {
+    return cls;
+  }
+}
+
 function compileClass(classes) {
   let result = '';
 
   for(const cls of classes) {
     if(isFunction(cls)) {
-      result += `${cls()} `
+      result += `${classHelper(cls())} `
     } else if(isString(cls)) {
-      result += `${cls} `;
+      result += `${classHelper(cls)} `;
     }
   }
 
@@ -178,7 +188,7 @@ function Node(tagname, id, classes, attributes, events, children, transition, fl
         }
       }
       for(const child of children) {
-        child.update(node);
+        child.update();
       }
     },
     remove() {
@@ -338,6 +348,7 @@ export function $if(condition, block) {
     },
     update() {
       updateFn();
+      nodes.forEach(node => node.update());
     },
     remove() {
       removeNodes();

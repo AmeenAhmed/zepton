@@ -1,7 +1,7 @@
 import { Zepton, Render, $, $t, State, $if, $each, $transition } from './zepton.js';
 
 
-const child = ({ count }) => {
+const child = ({ count, slot }) => {
   return Render({
     template: $('.child-component', {
       $: [
@@ -10,7 +10,10 @@ const child = ({ count }) => {
             $t('This is the child component')
           ]
         }),
-        $t(_ => count())
+        $t(_ => count()),
+        $('.slot', {
+          $: [ slot ]
+        })
       ]
     })
   });
@@ -31,7 +34,7 @@ const main = () => {
 
 
   setInterval(() => {
-    // state.count += 1;
+    state.count += 1;
     // state.items[0] += 1;
     // state.items.reverse();
     // state.items.push(state.items.length + 1);
@@ -97,25 +100,35 @@ const main = () => {
         $('div', {
           $: [ $t('Count : '), $t(_ => state.count)],
           _: {
-            class: _ => `count-${state.count}`
+            class: _ => [`count-${state.count}`, 'something', { onlyAfter20: _ => state.count > 20}]
           }
         }),
-        $if(_ => state.count < 5, _ => {
+        $if(_ => state.count < 10, _ => {
           return [
             $('.if-block', {
-              $: [ $t('Count < 5') ]
+              $: [ 
+                $if(_ => state.count < 5, _ => [
+                  $('.if-inner-block', {
+                    $: [ $t('Count < 5') ]
+                  })
+                ]).$else(_ => [
+                  $('.else-inner-block', {
+                    $: [ $t('Count < 10') ]
+                  })
+                ]) 
+              ]
             })
           ];
-        }).$elseif(_ => state.count < 10, _ => {
+        }).$elseif(_ => state.count < 20, _ => {
           return [
             $('.else-if-block', {
-              $: [ $t('Count < 10') ]
+              $: [ $t('Count < 20') ]
             })
           ];
         }).$else(_ => {
           return [
             $('.else-block', {
-              $: [ $t('Count >= 10') ]
+              $: [ $t('Count >= 20') ]
             })
           ];
         }),
@@ -173,8 +186,8 @@ const main = () => {
             })
           ]
         }),
-        child({ count: _ => state.count }),
-        child({ count: _ => state.count + 1 }),
+        child({ count: _ => state.count, slot: $('.slot-inside', { $: [ $t(_ => `${state.count} inside slot`) ] }) }),
+        child({ count: _ => state.count + 1, slot: $('.slot-inside', { $: [ $t(_ => `${state.count + 1} inside slot`) ] }) }),
         $('.transition-test', {
           $: [
             $('button', {
