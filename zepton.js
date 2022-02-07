@@ -556,7 +556,7 @@ export function $transition(conditional, options) {
   return Object.assign(conditional, { transitionOptions: options })
 }
 
-export function Zepton(options) {
+export default function Zepton(options) {
   const root = document.querySelector(options.root);
   const componentInstance = options.component();
   componentInstance.create();
