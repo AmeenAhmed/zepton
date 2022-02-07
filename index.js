@@ -1,4 +1,4 @@
-import { Zepton, Render, $, $t, State, $if, $each, $transition } from './zepton.js';
+import Zepton, { Render, $, $t, State, $if, $each, $transition } from './zepton.js';
 
 
 const child = ({ count, slot }) => {
