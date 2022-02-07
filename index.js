@@ -68,6 +68,21 @@ const main = () => {
 
   return Render({
     state,
+    mounted() {
+      console.log('Component mounted!');
+    },
+    beforeUpdate() {
+      console.log('Component before update!');
+    },
+    updated() {
+      console.log('Component updated!');
+    },
+    beforeDestroy() {
+      console.log('Component before destroy!');
+    },
+    destroyed() {
+      console.log('Component updated!');
+    },
     template: $('.main-component', {
       $: [
         $('h1', {

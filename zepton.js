@@ -515,16 +515,29 @@ export function Render(options) {
   const template = options.template;
   const style = options.style;
   const state = options.state;
+  const mounted = options.mounted || noop;
+  const beforeUpdate = options.beforeUpdate || noop;
+  const updated = options.updated || noop;
+  const beforeDestroy = options.beforeDestroy || noop;
+  const destroyed = options.destroyed || noop;
 
   const component = {
     create() {
       template.create();
     },
     update() {
+      beforeUpdate();
       template.update();
+      updated();
     },
     mount(node) {
       template.mount(node);
+      mounted();
+    },
+    remove() {
+      beforeDestroy();
+      template.remove();
+      destroyed();
     }
   };
 
