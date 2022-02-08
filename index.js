@@ -1,7 +1,7 @@
-import Zepton, { Render, $, $t, State, $if, $each, $transition } from './zepton.js';
+import Zepton, { Render, $, $t, State, $if, $each } from './zepton.js';
+import { fade } from './transitions.js';
 
-
-const child = ({ count, slot }) => {
+const child = ({ count, slot, click = _ => _ }) => {
   return Render({
     template: $('.child-component', {
       $: [
@@ -13,6 +13,14 @@ const child = ({ count, slot }) => {
         $t(_ => count()),
         $('.slot', {
           $: [ slot ]
+        }),
+        $('.buttons', {
+          $: [
+            $('button', {
+              $: [ $t('click to emit') ],
+              on: { click: ev => click('Clicked!') }
+            })
+          ]
         })
       ]
     })
@@ -51,40 +59,23 @@ const main = () => {
     // state.menu.sort((a, b) => a.price - b.price);
     // state.menu[0].name = 'Chicken sandwich supreme';
   }, 1000);
-
-
-  function fade({ delay = 0, duration = 400, easing = 'ease-in-out'} = {}) {
-    return {
-      delay,
-      duration,
-      easing,
-      in: {
-        opacity: [0, 1],
-        transform: ['scale(0)', 'scale(1)']
-      },
-      out: {
-        opacity: [0, 1],
-        transform: ['scale(1)', 'scale(1)']
-      }
-    };
-  }
-
+  
   return Render({
     state,
     mounted() {
-      console.log('Component mounted!');
+      // console.log('Component mounted!');
     },
     beforeUpdate() {
-      console.log('Component before update!');
+      // console.log('Component before update!');
     },
     updated() {
-      console.log('Component updated!');
+      // console.log('Component updated!');
     },
     beforeDestroy() {
-      console.log('Component before destroy!');
+      // console.log('Component before destroy!');
     },
     destroyed() {
-      console.log('Component updated!');
+      // console.log('Component updated!');
     },
     template: $('.main-component', {
       $: [
@@ -196,7 +187,7 @@ const main = () => {
             })
           ]
         }),
-        child({ count: _ => state.count, slot: $('.slot-inside', { $: [ $t(_ => `${state.count} inside slot`) ] }) }),
+        child({ count: _ => state.count, slot: $('.slot-inside', { $: [ $t(_ => `${state.count} inside slot`) ] }), click: (msg) => console.log(msg) }),
         child({ count: _ => state.count + 1, slot: $('.slot-inside', { $: [ $t(_ => `${state.count + 1} inside slot`) ] }) }),
         $('.transition-test', {
           $: [

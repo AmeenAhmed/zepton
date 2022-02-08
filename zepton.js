@@ -222,7 +222,6 @@ function Node(tagname, id, classes, attributes, events, children, transition, fl
       if(options.styles && isFunction(options.styles.value)) {
         const { result, value } = options.styles;
         const newResult = compileStyles(value);
-        console.log(newResult);
         if(result !== newResult) {
           compileStyles(value, node);
           options.styles.result = newResult;
@@ -552,8 +551,41 @@ export function $each(list, key, block) {
   }
 }
 
-export function $transition(conditional, options) {
-  return Object.assign(conditional, { transitionOptions: options })
+export function $component(fn) {
+  const anchor = document.createComment('');
+  let component = null;
+  let componentInstance = null;
+
+  return {
+    create() {
+      const comp = fn();
+      component = comp;
+      if(component) {
+        componentInstance = component();
+        componentInstance.create();
+      }
+    },
+    mount(_node) {
+      _node.append(anchor);
+      if(componentInstance) {
+        componentInstance.insertBefore(anchor);
+      }
+    },
+    update() {
+      const comp = fn();
+      if(comp !== component) {
+        if(componentInstance) {
+          componentInstance.remove();
+        }
+        component = comp;
+        if(component) {
+          componentInstance = component();
+          componentInstance.create();
+          componentInstance.insertBefore(anchor);
+        }
+      }
+    }
+  };
 }
 
 export default function Zepton(options) {
@@ -590,6 +622,9 @@ export function Render(options) {
       beforeDestroy();
       template.remove();
       destroyed();
+    },
+    insertBefore(anchor) {
+      template.insertBefore(anchor);
     }
   };
 
