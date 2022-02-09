@@ -1,4 +1,4 @@
-import Zepton, { Render, $, $t, State, $if, $each } from './zepton.js';
+import Zepton, { Render, $, State, $if, $each } from './zepton.js';
 import { fade } from './transitions.js';
 
 const child = ({ count, slot, click = _ => _ }) => {
@@ -7,17 +7,17 @@ const child = ({ count, slot, click = _ => _ }) => {
       $: [
         $('h1', {
           $: [
-            $t('This is the child component')
+            'This is the child component'
           ]
         }),
-        $t(_ => count()),
+        _ => count(),
         $('.slot', {
           $: [ slot ]
         }),
         $('.buttons', {
           $: [
             $('button', {
-              $: [ $t('click to emit') ],
+              $: [ 'click to emit' ],
               on: { click: ev => click('Clicked!') }
             })
           ]
@@ -80,16 +80,16 @@ const main = () => {
     template: $('.main-component', {
       $: [
         $('h1', {
-          $: [ $t('Main Component') ]
+          $: [ 'Main Component' ]
         }),
         $('input[type=text]', {
           on: {
             input: ev => state.message = ev.target.value
           }
         }),
-        $t(_ => state.message),
+        _ => state.message,
         $('div', {
-          $: [ $t('Count : '), $t(_ => state.count)],
+          $: [ 'Count : ', _ => state.count],
           _: {
             class: _ => [`count-${state.count}`, 'something', { onlyAfter20: _ => state.count > 20}],
             style: {
@@ -99,7 +99,7 @@ const main = () => {
           }
         }),
         $('.test-div', {
-          $: [ $t('Test div') ],
+          $: [ 'Test div' ],
           _: {
             style: _ => state.count % 2 === 0 ? { background: 'black', color: 'white' } : { background: 'white', color: 'black' } 
           }
@@ -110,11 +110,11 @@ const main = () => {
               $: [ 
                 $if(_ => state.count < 5, _ => [
                   $('.if-inner-block', {
-                    $: [ $t('Count < 5') ]
+                    $: [ 'Count < 5' ]
                   })
                 ]).$else(_ => [
                   $('.else-inner-block', {
-                    $: [ $t('Count < 10') ]
+                    $: [ 'Count < 10' ]
                   })
                 ]) 
               ]
@@ -123,13 +123,13 @@ const main = () => {
         }).$elseif(_ => state.count < 20, _ => {
           return [
             $('.else-if-block', {
-              $: [ $t('Count < 20') ]
+              $: [ 'Count < 20' ]
             })
           ];
         }).$else(_ => {
           return [
             $('.else-block', {
-              $: [ $t('Count >= 20') ]
+              $: [ 'Count >= 20' ]
             })
           ];
         }),
@@ -137,7 +137,7 @@ const main = () => {
           $: [
             $('button', {
               $: [
-                $t('Click here')
+                'Click here'
               ],
               on: {
                 click: ev => console.log(`clicked here when the count is ${state.count}`)
@@ -149,8 +149,8 @@ const main = () => {
           return [
             $('.each-item', {
               $: [ 
-                $t(_ => index() + '. '),
-                $t(_ => item()) 
+                _ => index() + '. ',
+                _ => item() 
               ],
               transition: {
                 fn: fade
@@ -162,10 +162,10 @@ const main = () => {
           return [
             $('.each-item', {
               $: [
-                $t(_ => (index() + 1) + '. '),
-                $t(_ => item().name),
-                $t(' ==> '),
-                $t(_ => `$${item().price}`)
+                _ => (index() + 1) + '. ',
+                _ => item().name,
+                ' ==> ',
+                _ => `$${item().price}`
               ],
               transition: {
                 fn: fade
@@ -180,24 +180,24 @@ const main = () => {
         $('.list-buttons', {
           $: [
             $('button', {
-              $: [ $t('Shuffle') ],
+              $: [ 'Shuffle' ],
               on: {
                 click: ev => state.menu.reverse()
               }
             })
           ]
         }),
-        child({ count: _ => state.count, slot: $('.slot-inside', { $: [ $t(_ => `${state.count} inside slot`) ] }), click: (msg) => console.log(msg) }),
-        child({ count: _ => state.count + 1, slot: $('.slot-inside', { $: [ $t(_ => `${state.count + 1} inside slot`) ] }) }),
+        child({ count: _ => state.count, slot: $('.slot-inside', { $: [ _ => `${state.count} inside slot` ] }), click: (msg) => console.log(msg) }),
+        child({ count: _ => state.count + 1, slot: $('.slot-inside', { $: [ _ => `${state.count + 1} inside slot` ] }) }),
         $('.transition-test', {
           $: [
             $('button', {
-              $: [ $t('Switch') ],
+              $: [ 'Switch' ],
               on: { click: ev => state.switch = !state.switch }
             }),
             $if(_ => state.switch, _ => [
               $('.switch', {
-                $: [ $t('On') ],
+                $: [ 'On' ],
                 transition: {
                   fn: fade,
                   _: {
@@ -207,7 +207,7 @@ const main = () => {
               }) 
             ]).$else(_ => [
               $('.switch', {
-                $: [ $t('Off') ],
+                $: [ 'Off' ],
                 transition: {
                   fn: fade,
                   _: {

@@ -270,6 +270,13 @@ export function $(selector, options = {}) {
   options._ = options._ || {};
   options.on = options.on || {};
   options.$ = options.$ || [];
+  options.$ = options.$.map(item => {
+    if(isString(item) || isFunction(item)) {
+      return $t(item);
+    }
+
+    return item;
+  });
   for(const key in options._) {
     if(key === 'class') {
       if(isArray(options._[key])) {
