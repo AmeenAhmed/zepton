@@ -178,10 +178,10 @@ function Node(tagname, id, classes, attributes, events, children, transition, fl
         if(key === 'style' && !isString(value)) {
           result = options.styles = { result: compileStyles(value, node), value};
         } else {
-          if(isFunction(attr)) {
+          if(isFunction(value)) {
             result = options.attributes[key] = { result: attr(), value};
-          } else if(isString(attr)) {
-            result = attr;
+          } else if(isString(value)) {
+            result = value;
           }
           node.setAttribute(key, result);
         }
@@ -261,34 +261,44 @@ function Node(tagname, id, classes, attributes, events, children, transition, fl
     },
     get() {
       return node;
-    }
+    },
+    $$node: true
   }
 }
 
-export function $(selector, options = {}) {
+export function $(selector, ...items) {
   let { tagname, id = '', classes = [], attributes = [] } = parseSelector(selector);
-  options._ = options._ || {};
-  options.on = options.on || {};
-  options.$ = options.$ || [];
-  options.$ = options.$.map(item => {
-    if(isString(item) || isFunction(item)) {
-      return $t(item);
-    }
+  let children = [];
+  let events = {};
+  let options = {};
 
-    return item;
-  });
-  for(const key in options._) {
-    if(key === 'class') {
-      if(isArray(options._[key])) {
-        classes = [...classes, ...options._[key]];
+
+  for(const item of items) {
+    if(!isObject(item) || !item.$$node) {
+      children.push($t(item));
+    } else if(isObject(item)) {
+      if(item.$$node) {
+        children.push(item);
       } else {
-        classes = [...classes, options._[key]];
+        options = item;
       }
-    } else {
-      attributes.push({ key, value: options._[key] });
     }
   }
-  return Node(tagname, id, classes, attributes, options.on, options.$, options.transition, options.flip);
+  
+  for(const key in options) {
+    if(key === 'class') {
+      if(isArray(options[key])) {
+        classes = [...classes, ...options[key]];
+      } else {
+        classes = [...classes, options[key]];
+      }
+    } else if(key.includes('on:')) {
+      events[key.slice(3)] = options[key]
+    } else {
+      attributes.push({ key, value: options[key] });
+    }
+  }
+  return Node(tagname, id, classes, attributes, events, children, options.transition, options.flip);
 }
 
 export function $t(text) {
@@ -326,7 +336,14 @@ export function $t(text) {
   }
 }
 
-
+function correctNodes (nodes) {
+  return nodes.map(item => {
+    if(!isObject(item) || !item.$$node) {
+      return $t(item);
+    }
+    return item;
+  });
+}
 
 
 export function $if(condition, block) {
@@ -358,7 +375,7 @@ export function $if(condition, block) {
         if(currentBlock !== item) {
           removeNodes();
           currentBlock = item;
-          nodes = item.block();
+          nodes = correctNodes(item.block());
           createNodes();
           return;
         }
@@ -370,7 +387,7 @@ export function $if(condition, block) {
       if(currentBlock !== els) {
         removeNodes();
         currentBlock = els;
-        nodes = els();
+        nodes = correctNodes(els());
         createNodes(); 
         return;
       }
@@ -402,7 +419,10 @@ export function $if(condition, block) {
     },
     insertBefore(_anchor) {
       _anchor.parentElement.insertBefore(anchor, _anchor);
-    }
+      nodes.forEach(node => node.insertBefore(anchor));
+      isMounted = true;
+    },
+    $$node: true
   }
 
   const $elseif = (condition, block) => {
@@ -442,7 +462,7 @@ export function $each(list, key, block) {
   }
   
   const createFnByIndex = (i) => {
-    const nodeList = $block(_ => $list[i], _ => i);
+    const nodeList = correctNodes($block(_ => $list[i], _ => i));
     nodeList.forEach(node => {
       node.create();
       if(isMounted) {
@@ -458,7 +478,7 @@ export function $each(list, key, block) {
 
   const createFnByKey = (key) => {
     const index = $list[key].index;
-    const nodeList = $block(_ => $list[key].item, _ => $list[key].index);
+    const nodeList = correctNodes($block(_ => $list[key].item, _ => $list[key].index));
     $nodesByIndex[index] = nodeList;
     $list[key].nodeList = nodeList;
     nodeList.forEach(node => {
@@ -475,6 +495,7 @@ export function $each(list, key, block) {
   }
 
   return {
+    $$node: true,
     create() {
       anchor = document.createComment('');
       for(let i=0; i<length; i++) {
@@ -558,7 +579,7 @@ export function $each(list, key, block) {
   }
 }
 
-export function $component(fn) {
+export function $component(fn, props) {
   const anchor = document.createComment('');
   let component = null;
   let componentInstance = null;
@@ -568,7 +589,7 @@ export function $component(fn) {
       const comp = fn();
       component = comp;
       if(component) {
-        componentInstance = component();
+        componentInstance = component(props);
         componentInstance.create();
       }
     },
@@ -586,12 +607,13 @@ export function $component(fn) {
         }
         component = comp;
         if(component) {
-          componentInstance = component();
+          componentInstance = component(props);
           componentInstance.create();
           componentInstance.insertBefore(anchor);
         }
       }
-    }
+    },
+    $$node: true
   };
 }
 

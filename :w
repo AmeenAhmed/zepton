@@ -1,0 +1,18 @@
+import Zepton, { Render, State, $ } from './zepton.js';
+
+function main() {
+  const state = State({
+    count: 0
+  });
+
+  const template = $('.main-component', 
+    $('.count', 'Count => ', _ => state.count)
+  );
+
+  return Render({ state, template });
+}
+
+const App = new Zepton({
+  root: '#root',
+  component: main
+});
