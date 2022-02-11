@@ -111,13 +111,16 @@ function doTransition(node, options, direction, cb) {
 function doFLIP(node, options, startRect, endRect, cb) {
   const startX = startRect.x - endRect.x;
   const startY = startRect.y - endRect.y;
+  const delay = options.delay || 0;
+  const duration = options.duration || 400; 
+  const easing = options.easing || 'ease-in-out';
   
   node.style.transition = 'none';
   node.style.transform = `translate(${startX}px, ${startY}px)`;
   node.scrollWidth;
-  node.style.transitionDelay = `${options.delay}ms`;
-  node.style.transitionDuration = `${options.duration}ms`;
-  node.style.transitionTimingFunction = options.easing;
+  node.style.transitionDelay = `${delay}ms`;
+  node.style.transitionDuration = `${duration}ms`;
+  node.style.transitionTimingFunction = easing;
   node.style.transitionProperty = 'transform';
   node.scrollWidth;
   node.style.transform = 'translate(0,0)';
@@ -274,9 +277,9 @@ export function $(selector, ...items) {
 
 
   for(const item of items) {
-    if(!isObject(item) || !item.$$node) {
+    if(!isObject(item)) {
       children.push($t(item));
-    } else if(isObject(item)) {
+    } else {
       if(item.$$node) {
         children.push(item);
       } else {
@@ -298,6 +301,7 @@ export function $(selector, ...items) {
       attributes.push({ key, value: options[key] });
     }
   }
+
   return Node(tagname, id, classes, attributes, events, children, options.transition, options.flip);
 }
 
@@ -338,7 +342,7 @@ export function $t(text) {
 
 function correctNodes (nodes) {
   return nodes.map(item => {
-    if(!isObject(item) || !item.$$node) {
+    if(!isObject(item)) {
       return $t(item);
     }
     return item;

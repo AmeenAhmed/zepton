@@ -4,14 +4,16 @@ function main() {
   const state = State({
     count: 0,
     nums: [1, 2, 3],
-    menu: [
-
+    games: [
+      { id: '1', name: 'Civilization 5' },
+      { id: '2', name: 'Europa Universalis 4' },
+      { id: '3', name: 'Dwarf fortress' }
     ]
   });
 
   setInterval(_ => {
-    state.count ++;
-    state.nums.push(state.nums.length + 1);
+    // state.count ++;
+    // state.nums.push(state.nums.length + 1);
   }, 1000);
 
   const template = $('.main-component', 
@@ -33,9 +35,15 @@ function main() {
     ]),
     $each(state.nums, (item, index) => [
       $('.num', item),
-      'Hello world',
-      _ => state.count
-    ])
+      // 'Hello world',
+      // _ => state.count
+    ]),
+    $('.games',
+      $each(state.games, item => item.id, (item, index) => [
+        $('.game', _ => index() + 1, '. ', _ => item().name, { flip: { duration: 200 } }),
+      ])
+    ),
+    $('.buttons', $('button', 'Reverse', { 'on:click': ev => state.games.reverse() }))
   );
 
   return Render({ state, template });
