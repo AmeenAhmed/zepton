@@ -297,6 +297,8 @@ export function $(selector, ...items) {
       }
     } else if(key.includes('on:')) {
       events[key.slice(3)] = options[key]
+    } else if(key[0] === '$' && isFunction(options[key])) {
+      events[key.slice(1)] = options[key]
     } else {
       attributes.push({ key, value: options[key] });
     }

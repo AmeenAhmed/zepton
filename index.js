@@ -43,7 +43,7 @@ function main() {
         $('.game', _ => index() + 1, '. ', _ => item().name, { flip: { duration: 200 } }),
       ])
     ),
-    $('.buttons', $('button', 'Reverse', { 'on:click': ev => state.games.reverse() }))
+    $('.buttons', $('button', 'Reverse', { $click: ev => state.games.reverse() }))
   );
 
   return Render({ state, template });
