@@ -640,7 +640,7 @@ export function $component(fn, props = {}) {
       if(componentInstance) {
         componentInstance.remove();
       }
-    }
+    },
     $$node: true
   };
 }
