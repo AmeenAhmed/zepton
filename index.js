@@ -1,4 +1,15 @@
-import Zepton, { Render, State, $, $if, $each } from './zepton.js';
+import Zepton, { Render, State, $, $if, $each, $component } from './zepton.js';
+
+function test() {
+  const template = $('h1', 'test component');
+  return Render({ template });
+}
+
+function comp() {
+  const template = $component(_ => test);
+
+  return Render({ template });
+}
 
 function main() {
   const state = State({
@@ -43,7 +54,8 @@ function main() {
         $('.game', _ => index() + 1, '. ', _ => item().name, { flip: { duration: 200 } }),
       ])
     ),
-    $('.buttons', $('button', 'Reverse', { $click: ev => state.games.reverse() }))
+    $('.buttons', $('button', 'Reverse', { $click: ev => state.games.reverse() })),
+    comp()
   );
 
   return Render({ state, template });

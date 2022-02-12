@@ -585,7 +585,7 @@ export function $each(list, key, block) {
   }
 }
 
-export function $component(fn, props) {
+export function $component(fn, props = {}) {
   const anchor = document.createComment('');
   let component = null;
   let componentInstance = null;
@@ -617,6 +617,12 @@ export function $component(fn, props) {
           componentInstance.create();
           componentInstance.insertBefore(anchor);
         }
+      }
+    },
+    insertBefore(_anchor) {
+      _anchor.parentElement.insertBefore(anchor, _anchor);
+      if(componentInstance) {
+        componentInstance.insertBefore(anchor);
       }
     },
     $$node: true
@@ -660,7 +666,8 @@ export function Render(options) {
     },
     insertBefore(anchor) {
       template.insertBefore(anchor);
-    }
+    },
+    $$node: true
   };
 
   if(state) {
