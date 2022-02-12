@@ -526,7 +526,7 @@ export function $each(list, key, block) {
     },
     remove() {
       nodeLists.forEach(nodeList => nodeList.forEach(node => node.remove()));
-      node.remove();
+      anchor.remove();
       isMounted = false;
     },
     update() {
