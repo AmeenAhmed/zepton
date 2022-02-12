@@ -519,6 +519,16 @@ export function $each(list, key, block) {
       nodeLists.forEach(nodeList => nodeList.forEach(node => node.insertBefore(anchor)));
       isMounted = true;
     },
+    insertBefore(_anchor) {
+      _anchor.parentElement.insertBefore(anchor, _anchor);
+      nodeLists.forEach(nodeList => nodeList.forEach(node => node.insertBefore(anchor)));
+      isMounted = true;
+    },
+    remove() {
+      nodeLists.forEach(nodeList => nodeList.forEach(node => node.remove()));
+      node.remove();
+      isMounted = false;
+    },
     update() {
       if(!$key) {
         if(list.length < length) {
@@ -625,6 +635,12 @@ export function $component(fn, props = {}) {
         componentInstance.insertBefore(anchor);
       }
     },
+    remove() {
+      anchor.remove();
+      if(componentInstance) {
+        componentInstance.remove();
+      }
+    }
     $$node: true
   };
 }
