@@ -165,7 +165,7 @@ function Node(tagname, id, classes, attributes, events, children, transition, fl
       }
 
       if(id) {
-        node.setAttribute('id', options.id);
+        node.setAttribute('id', id);
       }
 
       options.class = compileClass(classes);
@@ -274,7 +274,6 @@ export function $(selector, ...items) {
   let children = [];
   let events = {};
   let options = {};
-
 
   for(const item of items) {
     if(!isObject(item)) {

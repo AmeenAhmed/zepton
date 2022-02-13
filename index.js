@@ -27,7 +27,7 @@ function main() {
     // state.nums.push(state.nums.length + 1);
   }, 1000);
 
-  const template = $('.main-component', 
+  const template = $('.main-component#some-id', 
     $('.count', 'Count => ', _ => state.count),
     $if(_ => state.count < 10, _ => [
         $if(_ => state.count < 5, _ => {
