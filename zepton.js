@@ -669,16 +669,16 @@ export function Render(options) {
     update() {
       beforeUpdate();
       template.update();
-      updated();
+      setTimeout(_ => updated());
     },
     mount(node) {
       template.mount(node);
-      mounted();
+      setTimeout(_ => mounted());
     },
     remove() {
       beforeDestroy();
       template.remove();
-      destroyed();
+      setTimeout(destroyed());
     },
     insertBefore(anchor) {
       template.insertBefore(anchor);
