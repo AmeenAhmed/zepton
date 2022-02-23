@@ -2,7 +2,10 @@
   "name": "zepton",
   "version": "0.1.7",
   "description": "A small and flexible Javascript library for building user interfaces.",
-  "main": "zepton.js",
+  "exports": {
+    ".": "./zepton.js",
+    "./transitions": "./transitions.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
