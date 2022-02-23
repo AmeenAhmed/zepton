@@ -58,7 +58,7 @@ function compileClass(classes) {
   for(const cls of classes) {
     if(isFunction(cls)) {
       result += `${classHelper(cls())} `
-    } else if(isString(cls)) {
+    } else {
       result += `${classHelper(cls)} `;
     }
   }
@@ -182,11 +182,15 @@ function Node(tagname, id, classes, attributes, events, children, transition, fl
           result = options.styles = { result: compileStyles(value, node), value};
         } else {
           if(isFunction(value)) {
-            result = options.attributes[key] = { result: attr(), value};
-          } else if(isString(value)) {
+            result = value();
+            options.attributes[key] = { result, value};
+          } else {
             result = value;
           }
-          node.setAttribute(key, result);
+
+          if(result !== false) {
+            node.setAttribute(key, '' + result);
+          }
         }
       }
       for(const key in events) {
@@ -213,12 +217,18 @@ function Node(tagname, id, classes, attributes, events, children, transition, fl
       const cls = compileClass(classes);
       if(cls !== options.class) {
         node.setAttribute('class', cls);
+        options.class = cls;
       }
       for(const key in options.attributes) {
         const { result, value } = options.attributes[key];
         const newResult = value();
         if(result !== newResult) {
-          node.setAttribute(key, newResult);
+          if(newResult !== false) {
+            node.setAttribute(key, newResult);
+          } else {
+            node.removeAttribute(key);
+          }
+
           options.attributes[key].result = newResult;
         }
       }
@@ -359,8 +369,6 @@ export function $if(condition, block) {
   let nodes = [];
   let isMounted = false;
   let node;
-  let isTransitioning = false;
-  let transitioningNodes = [];
 
   const createNodes = () => {
     nodes.forEach(node => node.create());
@@ -442,8 +450,6 @@ export function $if(condition, block) {
   };
 
   ifs.push({ condition, block });
-
-  
 
   return { $elseif, $else, ...node };
 }
@@ -644,6 +650,33 @@ export function $component(fn, props = {}) {
   };
 }
 
+export function $html(htmlString) {
+  let fragment;
+  let node;
+  const parser = new DOMParser();
+
+  return {
+    create() {
+      fragment = parser.parseFromString(htmlString, 'text/html');
+      node = document.createElement('div');
+      node.style.display = 'contents';
+    },
+    mount(_node) {
+      node.append(fragment.body);
+      _node.append(node);
+    },
+    update() {
+    },
+    insertBefore(_anchor) {
+      _anchor.parentElement.insertBefore(node, _anchor);
+    },
+    remove() {
+      node.remove();
+    },
+    $$node: true
+  }
+}
+
 export default function Zepton(options) {
   const root = document.querySelector(options.root);
   const componentInstance = options.component();
@@ -651,10 +684,12 @@ export default function Zepton(options) {
   componentInstance.mount(root);
 }
 
-export function Render(options) {
+export function render(options) {
   const template = options.template;
-  const style = options.style;
   const state = options.state;
+  const beforeCreate = options.beforeCreate || noop;
+  const created = options.created || noop;
+  const beforeMount = options.beforeMount || noop;
   const mounted = options.mounted || noop;
   const beforeUpdate = options.beforeUpdate || noop;
   const updated = options.updated || noop;
@@ -663,24 +698,31 @@ export function Render(options) {
 
   const component = {
     create() {
+      beforeCreate();
       template.create();
+      setTimeout(created);
     },
     update() {
       beforeUpdate();
+      if(state) {
+        state.$$$invalidate();
+      }
       template.update();
-      setTimeout(_ => updated());
+      setTimeout(updated);
     },
     mount(node) {
       template.mount(node);
-      setTimeout(_ => mounted());
+      setTimeout(mounted);
     },
     remove() {
       beforeDestroy();
       template.remove();
-      setTimeout(destroyed());
+      setTimeout(destroyed);
     },
     insertBefore(anchor) {
+      beforeMount();
       template.insertBefore(anchor);
+      setTimeout(mounted);
     },
     $$node: true
   };
@@ -693,7 +735,7 @@ export function Render(options) {
         console.log('Cannot invalidate!!');
       } else {
         timeout = setTimeout(_ => {
-          component.update()
+          component.update();
           timeout = -1;
         });
       }
@@ -783,12 +825,35 @@ export function Collection(_array, root) {
 }
 
 export function State (obj, root) {
+  let reverseInvalidate = false;
   const state = {
+    $$$invalidate() {
+      for(let key in obj) {
+        let value = obj[key];
+        if(isFunction(value)) {
+          reverseInvalidate = true;
+          value = value();
+          state[`$$${key}`] = value;
+          if(isArray(value)) {
+            state[`$$${key}`] = Collection(value, state);
+          } else if(isObject(value)) {
+            state[`$$${key}`] = State(value, state);
+          } else {
+            state[`$$${key}`] = value;
+          }
+          setTimeout(_ => reverseInvalidate = false);
+        }
+      }
+    }
   };
   root = root || state;
 
   for(let key in obj) {
-    const value = obj[key];
+    let value = obj[key];
+    if(isFunction(value)) {
+      value = value();
+    }
+
     if(isArray(value)) {
       state[`$$${key}`] = Collection(value, state);
     } else if(isObject(value)) {
@@ -802,11 +867,14 @@ export function State (obj, root) {
       },
       set(value) {
         state[`$$${key}`] = value;
-        if(root.$$invalidate) {
+        if(root.$$invalidate && !reverseInvalidate) {
           root.$$invalidate();
         }
       }
-    })
+    });
   }
   return state;
 }
+
+export const createState = State;
+export const createApp = Zepton;
