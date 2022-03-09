@@ -105,7 +105,7 @@ function doTransition(node, options, direction, cb) {
   for(var key in anim) {
     node.style[key] = anim[key][1];
   }
-  node.ontransitionend = cb || noop; 
+  setTimeout(cb || noop, options.duration || 0);
 }
 
 function doFLIP(node, options, startRect, endRect, cb) {
@@ -127,7 +127,7 @@ function doFLIP(node, options, startRect, endRect, cb) {
   node.ontransitionend = cb || noop; 
 }
 
-function Node(tagname, id, classes, attributes, events, children, transition, flip) {
+function Node(tagname, id, classes, attributes, events, children, transitions, flip) {
   let node;
 
   const options = {
@@ -138,16 +138,18 @@ function Node(tagname, id, classes, attributes, events, children, transition, fl
   };
 
   const intro = (cb = noop) => {
-    if(transition) {
-      doTransition(node, transition.fn(transition._), 'in', cb);
+    if(transitions.transition || transitions.in) {
+      const t = transitions.transition || transitions.in;
+      doTransition(node, t.fn(t._), 'in', cb);
     } else {
       cb();
     }
   }
 
   const outro = (cb = noop) => {
-    if(transition) {
-      doTransition(node, transition.fn(transition._), 'out', cb);
+    if(transitions.transition || transitions.out) {
+      const t = transitions.transition || transitions.out;
+      doTransition(node, t.fn(t._), 'out', cb);
     } else {
       cb();
     }
@@ -284,6 +286,7 @@ export function $(selector, ...items) {
   let children = [];
   let events = {};
   let options = {};
+  let transitions = {};
 
   for(const item of items) {
     if(!isObject(item)) {
@@ -305,15 +308,19 @@ export function $(selector, ...items) {
         classes = [...classes, options[key]];
       }
     } else if(key.includes('on:')) {
-      events[key.slice(3)] = options[key]
+      events[key.slice(3)] = options[key];
     } else if(key[0] === '$' && isFunction(options[key])) {
-      events[key.slice(1)] = options[key]
+      events[key.slice(1)] = options[key];
+    } else if(key === 'transition' || key === 'in' || key === 'out') {
+      transitions.transition = options.transition;
+      transitions.in = options.in;
+      transitions.out = options.out;
     } else {
       attributes.push({ key, value: options[key] });
     }
   }
 
-  return Node(tagname, id, classes, attributes, events, children, options.transition, options.flip);
+  return Node(tagname, id, classes, attributes, events, children, transitions, options.flip);
 }
 
 export function $t(text) {
@@ -331,7 +338,7 @@ export function $t(text) {
       _node.appendChild(node);
     },
     update() {
-      if(isFunction(text)){
+      if(isFunction(text)) {
         const _text = '' + text();
         if(_text !== $text) {
           node.textContent = _text;
@@ -537,14 +544,18 @@ export function $each(list, key, block) {
     update() {
       if(!$key) {
         if(list.length < length) {
+          $list = [...list];
+          length = list.length;
           const nodeList = nodeLists.pop();
           nodeList.forEach(node => node.remove());
         } else if(list.length > length) {
+          $list = [...list];
+          length = list.length;
           const nodeList = createFnByIndex(list.length - 1);
           nodeLists.push(nodeList);
+        } else {
+          $list = [...list];
         }
-        $list = [...list];
-        length = list.length;
         nodeLists.forEach(nodeList => nodeList.forEach(node => node.update()));
       } else {
         const keys = {};
@@ -552,6 +563,7 @@ export function $each(list, key, block) {
           keys[key] = true;
         }
         length = list.length;
+        const $newNodesByIndex = {};
         for(let i=length - 1; i>= 0; i--) {
           const index = i;
           const item = list[index];
@@ -565,31 +577,36 @@ export function $each(list, key, block) {
             if(index === length - 1) {
               nodeList.forEach(item => item.insertBefore(anchor));
             } else {
-              nodeList.forEach(item => item.insertBefore($nodesByIndex[index + 1][0].get()));
+              nodeList.forEach(item => item.insertBefore($newNodesByIndex[index + 1][0].get()));
             }
             nodeLists[index] = nodeList;
-            $nodesByIndex[index] = nodeList;
+            $newNodesByIndex[index] = nodeList;
             $itemsByIndex[index] = item;
             length = list.length;
             obj = $list[key];
-          }
-
-          if(obj.index !== index) {
+          } else if(obj.index !== index) {
             $itemsByIndex[index] = item;
-            $nodesByIndex[index] = $nodesByIndex[obj.index];
-            obj.index = i;
-
+            $newNodesByIndex[index] = $nodesByIndex[obj.index];
+            obj.index = index;
             if(index === length - 1) {
-              obj.nodeList.forEach(item => item.insertBefore(anchor));
+              if(obj.nodeList[obj.nodeList.length - 1].get().nextSibling !== anchor) {
+                obj.nodeList.forEach(item => item.insertBefore(anchor));
+              }
             } else {
-              obj.nodeList.forEach(item => item.insertBefore($nodesByIndex[index + 1][0].get()));
+              if(obj.nodeList[obj.nodeList.length - 1].get().nextSibling !== $newNodesByIndex[index + 1][0].get()) {
+                obj.nodeList.forEach(item => item.insertBefore($newNodesByIndex[index + 1][0].get()));
+              }
             }
+          } else {
+            $newNodesByIndex[index] = $nodesByIndex[obj.index]
           }
 
           delete keys[key];
 
           obj.nodeList.forEach(item => item.update());
         }
+
+        $nodesByIndex = $newNodesByIndex;
 
         for(let key in keys) {
           $list[key].nodeList.forEach(item => item.remove());
@@ -601,12 +618,13 @@ export function $each(list, key, block) {
 }
 
 export function $component(fn, props = {}) {
-  const anchor = document.createComment('');
+  let anchor = null;
   let component = null;
   let componentInstance = null;
 
   return {
     create() {
+      anchor = document.createComment('');
       const comp = fn();
       component = comp;
       if(component) {
@@ -653,11 +671,13 @@ export function $component(fn, props = {}) {
 export function $html(htmlString) {
   let fragment;
   let node;
+  let html = '';
   const parser = new DOMParser();
 
   return {
     create() {
-      fragment = parser.parseFromString(htmlString, 'text/html');
+      html = isFunction(htmlString) ? htmlString() : htmlString;
+      fragment = parser.parseFromString(html, 'text/html');
       node = document.createElement('div');
       node.style.display = 'contents';
     },
@@ -666,12 +686,73 @@ export function $html(htmlString) {
       _node.append(node);
     },
     update() {
+      const _html = isFunction(htmlString) ? htmlString() : htmlString;
+      if(html !== _html) {
+        node.innerHTML = '';
+        fragment = parser.parseFromString(_html, 'text/html');
+        node.append(fragment.body);
+      }
     },
     insertBefore(_anchor) {
+      node.append(fragment.body);
       _anchor.parentElement.insertBefore(node, _anchor);
     },
     remove() {
       node.remove();
+    },
+    $$node: true
+  }
+}
+
+export function $key(keyFn, nodesFn) {
+  let anchor;
+  let key = keyFn();
+  let nodes = [];
+
+  const createFn = _ => {
+    nodes = nodesFn();
+    for(const node of nodes) {
+      node.create(anchor);
+    }
+  }
+  
+  const mountFn = _ => {
+    for(const node of nodes) {
+      node.insertBefore(anchor);
+    }
+  }
+
+  const removeFn = _ => {
+    for(const node of nodes) {
+      node.remove();
+    }
+  }
+
+  return {
+    create() {
+      anchor = document.createComment('');
+      createFn();
+    },
+    mount(_node) {
+      _node.append(anchor);
+      mountFn();
+    },
+    update() {
+      const newKey = keyFn();
+      if(key !== newKey) {
+        key = newKey;
+        removeFn();
+        createFn();
+        mountFn();
+      }
+    },
+    insertBefore(_anchor) {
+      _anchor.parentElement.insertBefore(anchor, _anchor);
+      mountFn();
+    },
+    remove() {
+      removeFn();
+      anchor.remove();
     },
     $$node: true
   }
@@ -746,6 +827,7 @@ export function render(options) {
 }
   
 export function Collection(_array, root) {
+  _array = [..._array];
   if(isArray(_array)) {
     const $$invalidate = () => {
       if(root.$$invalidate) {
@@ -764,17 +846,22 @@ export function Collection(_array, root) {
     }
 
     let array = _array.map(item => itemConv(item));
+    let dontInvalidate = false;
 
     array.push = function () {
       let items = Array.prototype.slice.apply(arguments);
       items = items.map(item => itemConv(item));
+      dontInvalidate = true;
       Array.prototype.push.apply(array, items);
+      dontInvalidate = false;
       $$invalidate();
       return array.length;
     }
 
     array.pop = function() {
+      dontInvalidate = true;
       const value = Array.prototype.pop.apply(array, arguments);
+      dontInvalidate = false;
       $$invalidate();
       return value;
     }
@@ -782,38 +869,48 @@ export function Collection(_array, root) {
     array.unshift = function() {
       let items = Array.prototype.slice.apply(arguments);
       items = items.map(item => itemConv(item));
+      dontInvalidate = true;
       Array.prototype.unshift.apply(array, items);
+      dontInvalidate = false;
       $$invalidate();
       return array.length;
     }
 
     array.shift = function() {
+      dontInvalidate = true;
       const value = Array.prototype.shift.apply(array, arguments);
+      dontInvalidate = false;
       $$invalidate();
       return value;
     }
 
     array.reverse = function() {
+      dontInvalidate = true;
       Array.prototype.reverse.apply(array, arguments);
+      dontInvalidate = false;
       $$invalidate();
     }
 
     array.sort = function() {
+      dontInvalidate = true;
       Array.prototype.sort.apply(array, arguments);
+      dontInvalidate = false;
       $$invalidate();
     }
 
     array.splice = function(start, deleteCount, ...items) {
       items = items.map(item => itemConv(item));
       const args = [start, deleteCount, items];
+      dontInvalidate = true;
       Array.prototype.splice.apply(array, args);
+      dontInvalidate = false;
       $$invalidate();
     }
 
     array = new Proxy(array, {
       set: function(obj, prop, value) {
         obj[prop] = value;
-        if(prop !== 'length') {
+        if(prop !== 'length' && !dontInvalidate) {
           $$invalidate();
         }
         return true;

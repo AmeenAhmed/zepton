@@ -1,5 +1,7 @@
-import { createApp, createState, render, $, $component } from './zepton.js';
+import { createApp, createState, render, $, $if, $component } from './zepton.js';
+import { slideDown, slideRight } from './transitions.js';
 
+/*
 function Comp1 () {
   const template = $('h1', 'Comp1');
 
@@ -12,9 +14,17 @@ function Comp2 () {
   return render({ template });
 }
 
+*/
+
 function Main() {
-  const state = createState({ count: 0 });
-	const template = $('.view', $component(_ => Comp1));
+  const state = createState({ isVisible: true });
+	const template = $('.view',
+    $('input[type=checkbox]', { checked: true, $input: ev => state.isVisible = !state.isVisible }),
+    $('label', 'Check'),
+    $if(_ => state.isVisible, _ => [
+      $('.msg', 'Hello world', { in: { fn: slideDown }, out: { fn: slideRight } })
+    ])
+  );
 
   setInterval(_ => state.count ++, 1000);
 
