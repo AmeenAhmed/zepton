@@ -691,6 +691,7 @@ export function $html(htmlString) {
         node.innerHTML = '';
         fragment = parser.parseFromString(_html, 'text/html');
         node.append(fragment.body);
+        html = _html;
       }
     },
     insertBefore(_anchor) {
