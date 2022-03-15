@@ -2,7 +2,7 @@
 
 A small and flexible Javascript library for building user interfaces.
 
-- Small: All features you expect from a modern framework in a very small package. < 10 kb gzipped.
+- Small: All features you expect from a modern framework in a very small package. < 5 kb minified and gzipped.
 - Flexible: Uses a simple interface. Write your components in plain Javascript and build interfaces your own way.
 - No virtual DOM: No compilation, no virtual DOM and a small runtime means your apps are small and fast.
 
@@ -66,4 +66,4 @@ $ npm run dev
 - The Zepton website has a [playground](https://www.zeptonjs.org/examples) where you can try Zepton on your own.
 
 ## License
-Zepton is [MIT licensed](./LICENSE).)
+Zepton is [MIT licensed](./LICENSE).
