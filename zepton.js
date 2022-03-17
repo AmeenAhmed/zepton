@@ -813,9 +813,7 @@ export function render(options) {
     let timeout = -1;
 
     state.$$invalidate = _ => {
-      if(timeout !== -1) {
-        console.log('Cannot invalidate!!');
-      } else {
+      if(timeout === -1) {
         timeout = setTimeout(_ => {
           component.update();
           timeout = -1;
