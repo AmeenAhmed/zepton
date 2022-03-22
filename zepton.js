@@ -47,6 +47,8 @@ function classHelper(cls) {
     return cls.map(item => classHelper(item)).join(' ');
   } else if(isObject(cls)) {
     return Object.keys(cls).map(key => (isFunction(cls[key]) ? cls[key]() : !!cls[key]) ? key : '');
+  } else if(isFunction(cls)) {
+    return `${classHelper(cls())}`;
   } else {
     return cls;
   }

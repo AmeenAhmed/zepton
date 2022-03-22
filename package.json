@@ -1,6 +1,6 @@
 {
   "name": "zepton",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "A small and flexible Javascript library for building user interfaces.",
   "exports": {
     ".": "./zepton.js",
