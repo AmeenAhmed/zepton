@@ -788,8 +788,10 @@ export function render(options) {
     },
     update() {
       beforeUpdate();
-      if(state) {
+      if(isObject(state)) {
         state.$$$invalidate();
+      } else if(isArray(state)) {
+        state.forEach(_state => _state.$$$invalidate());
       }
       template.update();
       setTimeout(updated);
@@ -811,9 +813,8 @@ export function render(options) {
     $$node: true
   };
 
-  if(state) {
-    let timeout = -1;
-
+  let timeout = -1;
+  if(isObject(state)) {
     state.$$invalidate = _ => {
       if(timeout === -1) {
         timeout = setTimeout(_ => {
@@ -822,6 +823,17 @@ export function render(options) {
         });
       }
     }
+  } else if(isArray(state)) {
+    state.forEach(_state => {
+      _state.$$invalidate = _ => {
+        if(timeout === -1) {
+          timeout = setTimeout(_ => {
+            component.update();
+            timeout = -1;
+          });
+        }
+      }
+    });
   }
 
   return component; 
